@@ -1,1 +1,1892 @@
-m
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DBMS Lab — SQL Code Generator · VISTAS</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c12;
+    --panel: #0f1520;
+    --panel2: #131d2b;
+    --border: #1c2a3a;
+    --border2: #243344;
+    --accent: #38bdf8;
+    --accent2: #0ea5e9;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --code-bg: #040810;
+    --text: #e2e8f0;
+    --muted: #4d6175;
+    --muted2: #64748b;
+    --font-ui: 'Syne', sans-serif;
+    --font-code: 'JetBrains Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* === SIDEBAR === */
+  #sidebar {
+    width: 270px;
+    min-width: 270px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 20px 18px 16px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #0f1e30 0%, #0a1520 100%);
+  }
+  .sidebar-header .badge {
+    font-family: var(--font-code);
+    font-size: 9px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid var(--accent);
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .sidebar-header h1 {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .sidebar-header h1 span { color: var(--accent); }
+  .sidebar-header p {
+    font-size: 10px;
+    color: var(--muted2);
+    margin-top: 4px;
+    font-family: var(--font-code);
+  }
+  .exp-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px 0;
+  }
+  .exp-list::-webkit-scrollbar { width: 4px; }
+  .exp-list::-webkit-scrollbar-track { background: transparent; }
+  .exp-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .exp-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 18px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .exp-item:hover { background: var(--panel2); }
+  .exp-item.active {
+    background: rgba(56,189,248,0.06);
+    border-left-color: var(--accent);
+  }
+  .exp-num {
+    font-family: var(--font-code);
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    min-width: 28px;
+    text-align: center;
+    margin-top: 1px;
+    transition: all 0.15s;
+  }
+  .exp-item.active .exp-num {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(56,189,248,0.08);
+  }
+  .exp-label {
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--muted2);
+    transition: color 0.15s;
+  }
+  .exp-item.active .exp-label { color: var(--text); font-weight: 600; }
+  .exp-item:hover .exp-label { color: var(--text); }
+
+  /* === MAIN === */
+  #main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .main-header {
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .header-left { flex: 1; }
+  .exp-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .meta-chip {
+    font-family: var(--font-code);
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .chip-num { background: rgba(56,189,248,0.12); color: var(--accent); border: 1px solid rgba(56,189,248,0.25); }
+  .chip-date { background: rgba(251,191,36,0.1); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+  .main-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .copy-btn {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(74,222,128,0.1);
+    color: var(--green);
+    border: 1px solid rgba(74,222,128,0.3);
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { background: rgba(74,222,128,0.18); border-color: rgba(74,222,128,0.5); }
+  .copy-btn.copied { color: var(--accent); border-color: var(--accent); background: rgba(56,189,248,0.1); }
+  .copy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* === CONTENT AREA === */
+  .content-area {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    overflow: hidden;
+  }
+
+  /* === FORM PANEL === */
+  .form-panel {
+    background: var(--panel2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 20px 24px;
+  }
+  .form-panel::-webkit-scrollbar { width: 4px; }
+  .form-panel::-webkit-scrollbar-track { background: transparent; }
+  .form-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .aim-box {
+    background: rgba(56,189,248,0.05);
+    border: 1px solid rgba(56,189,248,0.15);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+  }
+  .aim-label {
+    font-family: var(--font-code);
+    font-size: 9px;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .aim-text { font-size: 12px; color: var(--muted2); line-height: 1.5; }
+
+  .field-group { margin-bottom: 18px; }
+  .group-label {
+    font-family: var(--font-code);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .group-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .fields-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .fields-grid.single { grid-template-columns: 1fr; }
+  .field-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .field-wrap label {
+    font-size: 10px;
+    color: var(--muted2);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .field-wrap input, .field-wrap select {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: var(--font-code);
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .field-wrap input:focus, .field-wrap select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(56,189,248,0.1);
+  }
+  .field-wrap input::placeholder { color: var(--muted); }
+
+  .process-btn {
+    width: 100%;
+    margin-top: 6px;
+    background: linear-gradient(135deg, var(--accent2), #0369a1);
+    color: #fff;
+    border: none;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .process-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(14,165,233,0.3); }
+  .process-btn:active { transform: translateY(0); }
+
+  /* === OUTPUT PANEL === */
+  .output-panel {
+    background: var(--code-bg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .output-bar {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.02);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-red { background: #f87171; }
+  .dot-amber { background: var(--amber); }
+  .dot-green { background: var(--green); }
+  .output-bar-title {
+    font-family: var(--font-code);
+    font-size: 10px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+  .output-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+  }
+  .output-scroll::-webkit-scrollbar { width: 4px; }
+  .output-scroll::-webkit-scrollbar-track { background: transparent; }
+  .output-scroll::-webkit-scrollbar-thumb { background: #1e2a3a; border-radius: 2px; }
+
+  #output-code {
+    font-family: var(--font-code);
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #a8c8e8;
+    white-space: pre;
+    tab-size: 4;
+  }
+  #output-code .kw { color: #38bdf8; }   /* keywords */
+  #output-code .fn { color: #c084fc; }   /* functions */
+  #output-code .str { color: #86efac; }  /* strings */
+  #output-code .num { color: #fdba74; }  /* numbers */
+  #output-code .cmt { color: #3d5a73; }  /* comments */
+  #output-code .prompt { color: #fbbf24; } /* SQL> */
+  #output-code .ok { color: #4ade80; }   /* Table created etc */
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--muted);
+    text-align: center;
+    gap: 12px;
+  }
+  .empty-icon { font-size: 40px; opacity: 0.3; }
+  .empty-title { font-size: 14px; font-weight: 600; color: var(--muted2); }
+  .empty-sub { font-size: 12px; font-family: var(--font-code); }
+
+  /* Welcome screen */
+  #welcome {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+    gap: 16px;
+  }
+  .welcome-icon { font-size: 56px; margin-bottom: 8px; }
+  .welcome-title { font-size: 28px; font-weight: 800; color: var(--text); }
+  .welcome-title span { color: var(--accent); }
+  .welcome-sub { font-size: 14px; color: var(--muted2); max-width: 400px; line-height: 1.6; }
+  .welcome-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+  .welcome-chip {
+    font-family: var(--font-code);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    color: var(--muted2);
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div class="badge">VISTAS · DBMS Lab</div>
+    <h1>SQL Code<br><span>Generator</span></h1>
+    <p>Dept. of Advanced Computing & Analytics</p>
+  </div>
+  <div class="exp-list" id="exp-list"></div>
+</div>
+
+<!-- MAIN AREA -->
+<div id="main">
+  <!-- Welcome screen (shown initially) -->
+  <div id="welcome">
+    <div class="welcome-icon">🗄️</div>
+    <div class="welcome-title">DBMS Lab — <span>SQL Generator</span></div>
+    <div class="welcome-sub">Select any experiment from the sidebar. Fill in the variable fields and click <strong>Process</strong> to generate your SQL code.</div>
+    <div class="welcome-chips">
+      <span class="welcome-chip">CREATE TABLE</span>
+      <span class="welcome-chip">Constraints</span>
+      <span class="welcome-chip">SELECT / WHERE</span>
+      <span class="welcome-chip">ALTER / UPDATE</span>
+      <span class="welcome-chip">JOINs</span>
+      <span class="welcome-chip">Aggregate Fns</span>
+      <span class="welcome-chip">Date Functions</span>
+      <span class="welcome-chip">Views</span>
+      <span class="welcome-chip">Triggers</span>
+      <span class="welcome-chip">Subqueries</span>
+      <span class="welcome-chip">Stored Procedures</span>
+      <span class="welcome-chip">Cursors</span>
+    </div>
+  </div>
+
+  <!-- Experiment view (hidden initially) -->
+  <div id="exp-view" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+    <div class="main-header">
+      <div class="header-left">
+        <div class="exp-meta">
+          <span class="meta-chip chip-num" id="hdr-num"></span>
+          <span class="meta-chip chip-date" id="hdr-date"></span>
+        </div>
+        <div class="main-title" id="hdr-title"></div>
+      </div>
+      <button class="copy-btn" id="copy-btn" onclick="copyCode()" disabled>
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copy SQL
+      </button>
+    </div>
+    <div class="content-area">
+      <!-- Form Panel -->
+      <div class="form-panel" id="form-panel">
+        <div class="aim-box">
+          <div class="aim-label">AIM</div>
+          <div class="aim-text" id="aim-text"></div>
+        </div>
+        <div id="fields-container"></div>
+        <button class="process-btn" onclick="processCode()">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          PROCESS &amp; GENERATE SQL
+        </button>
+      </div>
+      <!-- Output Panel -->
+      <div class="output-panel">
+        <div class="output-bar">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-amber"></div>
+          <div class="dot dot-green"></div>
+          <span class="output-bar-title">oracle_sqlplus_output.sql</span>
+        </div>
+        <div class="output-scroll" id="output-scroll">
+          <div class="empty-state" id="empty-state">
+            <div class="empty-icon">⚡</div>
+            <div class="empty-title">Ready to Generate</div>
+            <div class="empty-sub">Fill in the form and click<br/>PROCESS to see your SQL</div>
+          </div>
+          <pre id="output-code" style="display:none;"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================================================================
+// EXPERIMENTS CONFIGURATION
+// ===================================================================
+const experiments = [
+
+// ─── EX 1: CREATE TABLE (BANK) ──────────────────────────────────────
+{
+  id: 1, date: "23-01-2026",
+  title: "Design a Database and Create Required Tables",
+  shortTitle: "Create Bank Table",
+  aim: "To create a table named bank and add some constraints while creating the table.",
+  groups: [
+    { label: "Table Settings", cols: 1, fields: [
+      { key: "suffix", label: "Table Name Suffix", def: "101", ph: "e.g. 101" },
+    ]},
+    { label: "Record 1", cols: 2, fields: [
+      { key: "r1_accno",  label: "Account No",  def: "1111" },
+      { key: "r1_name",   label: "Name",        def: "Braganya" },
+      { key: "r1_mobile", label: "Mobile No",   def: "9888419455" },
+      { key: "r1_bal",    label: "Balance",     def: "25000" },
+    ]},
+    { label: "Record 2", cols: 2, fields: [
+      { key: "r2_accno",  label: "Account No",  def: "2222" },
+      { key: "r2_name",   label: "Name",        def: "SREEYA" },
+      { key: "r2_mobile", label: "Mobile No",   def: "9941903833" },
+      { key: "r2_bal",    label: "Balance",     def: "45000" },
+    ]},
+    { label: "Record 3", cols: 2, fields: [
+      { key: "r3_accno",  label: "Account No",  def: "3333" },
+      { key: "r3_name",   label: "Name",        def: "GOWTHAM" },
+      { key: "r3_mobile", label: "Mobile No",   def: "9888888888" },
+      { key: "r3_bal",    label: "Balance",     def: "30000" },
+    ]},
+  ],
+  gen: (v) => {
+    const T = `bank${v.suffix}`;
+    const [n1,n2,n3] = [v.r1_name.toUpperCase(), v.r2_name.toUpperCase(), v.r3_name.toUpperCase()];
+    return `SQL> CREATE TABLE ${T}(
+  2      accountno NUMBER(10) PRIMARY KEY,
+  3      name      VARCHAR2(10) NOT NULL,
+  4      mobileno  NUMBER(10) UNIQUE,
+  5      balance   NUMBER(8,2)
+  6  );
+
+Table created.
+
+SQL> DESC ${T};
+
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------
+ ACCOUNTNO                                 NOT NULL NUMBER(10)
+ NAME                                      NOT NULL VARCHAR2(10)
+ MOBILENO                                           NUMBER(10)
+ BALANCE                                            NUMBER(8,2)
+
+SQL> INSERT INTO ${T} VALUES(${v.r1_accno}, '${n1}', ${v.r1_mobile}, ${v.r1_bal});
+
+1 row created.
+
+SQL> INSERT INTO ${T} VALUES(${v.r2_accno}, '${n2}', ${v.r2_mobile}, ${v.r2_bal});
+
+1 row created.
+
+SQL> INSERT INTO ${T} VALUES(${v.r3_accno}, '${n3}', ${v.r3_mobile}, ${v.r3_bal});
+
+1 row created.
+
+SQL> SELECT * FROM ${T};
+
+ ACCOUNTNO  NAME            MOBILENO    BALANCE
+ ---------- --------------- ----------- ----------
+ ${pad(v.r1_accno,10)} ${pad(n1,15)} ${pad(v.r1_mobile,11)} ${v.r1_bal}
+ ${pad(v.r2_accno,10)} ${pad(n2,15)} ${pad(v.r2_mobile,11)} ${v.r2_bal}
+ ${pad(v.r3_accno,10)} ${pad(n3,15)} ${pad(v.r3_mobile,11)} ${v.r3_bal}
+
+3 rows selected.
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 2: CONSTRAINTS (PK, FK, NOT NULL) ───────────────────────────
+{
+  id: 2, date: "30-01-2026",
+  title: "Apply Constraints — Primary Key, Foreign Key, NOT NULL",
+  shortTitle: "Constraints (PK / FK / NOT NULL)",
+  aim: "To create database tables and enforce data integrity using constraints such as Primary Key, Foreign Key, and NOT NULL.",
+  groups: [
+    { label: "Department Records", cols: 2, fields: [
+      { key: "d1_id",   label: "Dept 1 ID",   def: "1" },
+      { key: "d1_name", label: "Dept 1 Name", def: "HR" },
+      { key: "d2_id",   label: "Dept 2 ID",   def: "2" },
+      { key: "d2_name", label: "Dept 2 Name", def: "IT" },
+    ]},
+    { label: "Employee Records", cols: 2, fields: [
+      { key: "e1_id",     label: "Emp 1 ID",     def: "101" },
+      { key: "e1_name",   label: "Emp 1 Name",   def: "Arun" },
+      { key: "e1_sal",    label: "Emp 1 Salary",  def: "30000" },
+      { key: "e1_deptid", label: "Emp 1 Dept ID", def: "1" },
+      { key: "e2_id",     label: "Emp 2 ID",     def: "102" },
+      { key: "e2_name",   label: "Emp 2 Name",   def: "Meena" },
+      { key: "e2_sal",    label: "Emp 2 Salary",  def: "45000" },
+      { key: "e2_deptid", label: "Emp 2 Dept ID", def: "2" },
+    ]},
+    { label: "UPDATE Operation", cols: 2, fields: [
+      { key: "upd_empid", label: "Update Emp ID",    def: "102" },
+      { key: "upd_sal",   label: "New Salary",       def: "50000" },
+    ]},
+  ],
+  gen: (v) => {
+    return `SQL> CREATE TABLE department1(
+  2      dept_id   NUMBER PRIMARY KEY,
+  3      dept_name VARCHAR2(50) NOT NULL
+  4  );
+
+Table created.
+
+SQL> CREATE TABLE employee(
+  2      emp_id   NUMBER PRIMARY KEY,
+  3      emp_name VARCHAR2(50) NOT NULL,
+  4      salary   NUMBER NOT NULL,
+  5      dept_id  NUMBER,
+  6      CONSTRAINT emp_dept_fk FOREIGN KEY (dept_id)
+  7          REFERENCES department1(dept_id)
+  8  );
+
+Table created.
+
+SQL> INSERT INTO department1 VALUES(${v.d1_id}, '${v.d1_name}');
+
+1 row created.
+
+SQL> INSERT INTO department1 VALUES(${v.d2_id}, '${v.d2_name}');
+
+1 row created.
+
+SQL> INSERT INTO employee VALUES(${v.e1_id}, '${v.e1_name}', ${v.e1_sal}, ${v.e1_deptid});
+
+1 row created.
+
+SQL> INSERT INTO employee VALUES(${v.e2_id}, '${v.e2_name}', ${v.e2_sal}, ${v.e2_deptid});
+
+1 row created.
+
+SQL> UPDATE employee SET salary = ${v.upd_sal} WHERE emp_id = ${v.upd_empid};
+
+1 row updated.
+
+SQL> ALTER TABLE employee MODIFY dept_id NOT NULL;
+
+Table altered.
+
+SQL> SELECT emp_id, emp_name, salary, dept_id FROM employee;
+
+    EMP_ID EMP_NAME                                               SALARY    DEPT_ID
+---------- -------------------------------------------------- ---------- ----------
+   ${pad(v.e1_id,6)} ${pad(v.e1_name,50)} ${pad(v.e1_sal,9)} ${pad(v.e1_deptid,6)}
+   ${pad(v.upd_empid==v.e2_id?v.upd_empid:v.e2_id,6)} ${pad(v.e2_name,50)} ${pad(v.upd_empid==v.e2_id?v.upd_sal:v.e2_sal,9)} ${pad(v.e2_deptid,6)}
+
+2 rows selected.
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 3: SELECT QUERIES ───────────────────────────────────────────
+{
+  id: 3, date: "30-01-2026",
+  title: "Retrieve Data Using SELECT Statement with Various Clauses",
+  shortTitle: "SELECT Queries (WHERE, DISTINCT)",
+  aim: "To retrieve data from tables using SQL SELECT statement with different clauses.",
+  groups: [
+    { label: "Record 1", cols: 2, fields: [
+      { key: "e1_id",   label: "Emp ID",   def: "101" },
+      { key: "e1_name", label: "Name",     def: "Arun" },
+      { key: "e1_sal",  label: "Salary",   def: "30000" },
+      { key: "e1_dept", label: "Dept",     def: "HR" },
+    ]},
+    { label: "Record 2", cols: 2, fields: [
+      { key: "e2_id",   label: "Emp ID",   def: "102" },
+      { key: "e2_name", label: "Name",     def: "Meena" },
+      { key: "e2_sal",  label: "Salary",   def: "45000" },
+      { key: "e2_dept", label: "Dept",     def: "IT" },
+    ]},
+    { label: "Record 3", cols: 2, fields: [
+      { key: "e3_id",   label: "Emp ID",   def: "103" },
+      { key: "e3_name", label: "Name",     def: "Kiran" },
+      { key: "e3_sal",  label: "Salary",   def: "28000" },
+      { key: "e3_dept", label: "Dept",     def: "HR" },
+    ]},
+    { label: "Record 4", cols: 2, fields: [
+      { key: "e4_id",   label: "Emp ID",   def: "104" },
+      { key: "e4_name", label: "Name",     def: "Ravi" },
+      { key: "e4_sal",  label: "Salary",   def: "50000" },
+      { key: "e4_dept", label: "Dept",     def: "IT" },
+    ]},
+    { label: "Query Parameters", cols: 2, fields: [
+      { key: "filter_dept", label: "WHERE dept =", def: "HR" },
+      { key: "sal_thresh",  label: "WHERE salary >", def: "30000" },
+    ]},
+  ],
+  gen: (v) => {
+    const recs = [
+      {id:v.e1_id, name:v.e1_name, sal:v.e1_sal, dept:v.e1_dept},
+      {id:v.e2_id, name:v.e2_name, sal:v.e2_sal, dept:v.e2_dept},
+      {id:v.e3_id, name:v.e3_name, sal:v.e3_sal, dept:v.e3_dept},
+      {id:v.e4_id, name:v.e4_name, sal:v.e4_sal, dept:v.e4_dept},
+    ];
+    const allRows = recs.map(r=>`   ${pad(r.id,6)} ${pad(r.name,50)} ${pad(r.sal,9)} ${r.dept}`).join('\n');
+    const deptRows = recs.filter(r=>r.dept.toUpperCase()===v.filter_dept.toUpperCase())
+      .map(r=>`   ${pad(r.id,6)} ${pad(r.name,50)} ${pad(r.sal,9)} ${r.dept}`).join('\n');
+    const salRows = recs.filter(r=>Number(r.sal)>Number(v.sal_thresh))
+      .map(r=>`${pad(r.name,50)} ${r.sal}`).join('\n');
+    const depts = [...new Set(recs.map(r=>r.dept))].join('\n');
+    return `SQL> CREATE TABLE employee1(
+  2      emp_id   NUMBER PRIMARY KEY,
+  3      emp_name VARCHAR2(50) NOT NULL,
+  4      salary   NUMBER,
+  5      dept     VARCHAR2(30)
+  6  );
+
+Table created.
+
+SQL> INSERT INTO employee1 VALUES(${v.e1_id}, '${v.e1_name}', ${v.e1_sal}, '${v.e1_dept}');
+1 row created.
+SQL> INSERT INTO employee1 VALUES(${v.e2_id}, '${v.e2_name}', ${v.e2_sal}, '${v.e2_dept}');
+1 row created.
+SQL> INSERT INTO employee1 VALUES(${v.e3_id}, '${v.e3_name}', ${v.e3_sal}, '${v.e3_dept}');
+1 row created.
+SQL> INSERT INTO employee1 VALUES(${v.e4_id}, '${v.e4_name}', ${v.e4_sal}, '${v.e4_dept}');
+1 row created.
+
+SQL> SELECT * FROM employee1;
+
+    EMP_ID EMP_NAME                                               SALARY DEPT
+---------- -------------------------------------------------- ---------- -----
+${allRows}
+
+4 rows selected.
+
+SQL> SELECT emp_name, salary FROM employee1;
+
+EMP_NAME                                               SALARY
+-------------------------------------------------- ----------
+${recs.map(r=>`${pad(r.name,50)} ${r.sal}`).join('\n')}
+
+SQL> SELECT * FROM employee1 WHERE dept = '${v.filter_dept}';
+
+    EMP_ID EMP_NAME                                               SALARY DEPT
+---------- -------------------------------------------------- ---------- -----
+${deptRows || '(no rows selected)'}
+
+SQL> SELECT emp_name, salary FROM employee1 WHERE salary > ${v.sal_thresh};
+
+EMP_NAME                                               SALARY
+-------------------------------------------------- ----------
+${salRows || '(no rows selected)'}
+
+SQL> SELECT DISTINCT dept FROM employee1;
+
+DEPT
+------------------------------
+${depts}
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 4: ALTER, UPDATE, DELETE ────────────────────────────────────
+{
+  id: 4, date: "06-02-2026",
+  title: "Implement ALTER, UPDATE and DELETE Statements",
+  shortTitle: "ALTER / UPDATE / DELETE",
+  aim: "To modify table structure and manipulate records using ALTER, UPDATE, and DELETE statements.",
+  groups: [
+    { label: "Record 1", cols: 2, fields: [
+      { key: "e1_id",    label: "Emp ID",    def: "101" },
+      { key: "e1_name",  label: "Name",      def: "Arun" },
+      { key: "e1_sal",   label: "Salary",    def: "30000" },
+      { key: "e1_dept",  label: "Dept",      def: "HR" },
+      { key: "e1_email", label: "Email",     def: "arun@gmail.com" },
+    ]},
+    { label: "Record 2", cols: 2, fields: [
+      { key: "e2_id",    label: "Emp ID",    def: "102" },
+      { key: "e2_name",  label: "Name",      def: "Meena" },
+      { key: "e2_sal",   label: "Salary",    def: "45000" },
+      { key: "e2_dept",  label: "Dept",      def: "IT" },
+      { key: "e2_email", label: "Email",     def: "meena@gmail.com" },
+    ]},
+    { label: "Operations", cols: 2, fields: [
+      { key: "upd_id",  label: "UPDATE Emp ID",  def: "102" },
+      { key: "upd_sal", label: "New Salary",      def: "50000" },
+      { key: "del_id",  label: "DELETE Emp ID",  def: "101" },
+    ]},
+  ],
+  gen: (v) => {
+    const remaining = [v.e1_id, v.e2_id].filter(id=>id!==v.del_id);
+    const recs = {
+      [v.e1_id]: {name:v.e1_name, sal:v.upd_id===v.e1_id?v.upd_sal:v.e1_sal, dept:v.e1_dept, email:v.e1_email},
+      [v.e2_id]: {name:v.e2_name, sal:v.upd_id===v.e2_id?v.upd_sal:v.e2_sal, dept:v.e2_dept, email:v.e2_email},
+    };
+    const finalRows = Object.entries(recs)
+      .filter(([id])=>id!==v.del_id)
+      .map(([id,r])=>`   ${pad(id,6)} ${pad(r.name,17)} ${pad(r.sal,6)}  ${pad(r.dept,9)} ${r.email}`)
+      .join('\n');
+    return `SQL> CREATE TABLE employee2(
+  2      emp_id   NUMBER PRIMARY KEY,
+  3      emp_name VARCHAR2(50) NOT NULL,
+  4      salary   NUMBER,
+  5      dept     VARCHAR2(30)
+  6  );
+
+Table created.
+
+SQL> ALTER TABLE employee2 ADD email VARCHAR2(50);
+
+Table altered.
+
+SQL> INSERT INTO employee2 VALUES(${v.e1_id}, '${v.e1_name}', ${v.e1_sal}, '${v.e1_dept}', '${v.e1_email}');
+
+1 row created.
+
+SQL> INSERT INTO employee2 VALUES(${v.e2_id}, '${v.e2_name}', ${v.e2_sal}, '${v.e2_dept}', '${v.e2_email}');
+
+1 row created.
+
+SQL> ALTER TABLE employee2 MODIFY emp_name VARCHAR2(100);
+
+Table altered.
+
+SQL> UPDATE employee2 SET salary = ${v.upd_sal} WHERE emp_id = ${v.upd_id};
+
+1 row updated.
+
+SQL> DELETE FROM employee2 WHERE emp_id = ${v.del_id};
+
+1 row deleted.
+
+SQL> SELECT * FROM employee2;
+
+    EMP_ID EMP_NAME          SALARY DEPT      EMAIL
+---------- ----------------- ------ --------- --------------------
+${finalRows}
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 5: JOINS ─────────────────────────────────────────────────────
+{
+  id: 5, date: "06-02-2026",
+  title: "Implement Joins — Equi Join Between Two Tables",
+  shortTitle: "JOINS (Equi Join)",
+  aim: "To create two tables and display records with equi join matching on roll number.",
+  groups: [
+    { label: "Student Table — Table Suffix", cols: 1, fields: [
+      { key: "stu_suffix", label: "Student Table Suffix", def: "201", ph:"e.g. 201" },
+      { key: "lib_suffix", label: "Library Table Suffix", def: "201", ph:"e.g. 201" },
+    ]},
+    { label: "Student Record 1", cols: 2, fields: [
+      { key: "s1_roll",  label: "Roll No", def: "111" },
+      { key: "s1_name",  label: "Name",    def: "BRAGANYA" },
+      { key: "s1_class", label: "Class",   def: "CS" },
+    ]},
+    { label: "Student Record 2", cols: 2, fields: [
+      { key: "s2_roll",  label: "Roll No", def: "102" },
+      { key: "s2_name",  label: "Name",    def: "SREEYA" },
+      { key: "s2_class", label: "Class",   def: "M.TECH" },
+    ]},
+    { label: "Student Record 3", cols: 2, fields: [
+      { key: "s3_roll",  label: "Roll No", def: "103" },
+      { key: "s3_name",  label: "Name",    def: "GOWTHAM" },
+      { key: "s3_class", label: "Class",   def: "MBA" },
+    ]},
+    { label: "Library Record 1", cols: 2, fields: [
+      { key: "l1_bookid",   label: "Book ID",   def: "201" },
+      { key: "l1_bookname", label: "Book Name", def: "C++" },
+      { key: "l1_roll",     label: "Roll No",   def: "102" },
+    ]},
+    { label: "Library Record 2", cols: 2, fields: [
+      { key: "l2_bookid",   label: "Book ID",   def: "202" },
+      { key: "l2_bookname", label: "Book Name", def: "RDBMS" },
+      { key: "l2_roll",     label: "Roll No",   def: "102" },
+    ]},
+    { label: "Library Record 3", cols: 2, fields: [
+      { key: "l3_bookid",   label: "Book ID",   def: "203" },
+      { key: "l3_bookname", label: "Book Name", def: "C" },
+      { key: "l3_roll",     label: "Roll No",   def: "111" },
+    ]},
+  ],
+  gen: (v) => {
+    const ST = `student${v.stu_suffix}`, LT = `library${v.lib_suffix}`;
+    const students = [
+      {roll:v.s1_roll, name:v.s1_name.toUpperCase(), cls:v.s1_class},
+      {roll:v.s2_roll, name:v.s2_name.toUpperCase(), cls:v.s2_class},
+      {roll:v.s3_roll, name:v.s3_name.toUpperCase(), cls:v.s3_class},
+    ];
+    const libs = [
+      {bid:v.l1_bookid, bname:v.l1_bookname, roll:v.l1_roll},
+      {bid:v.l2_bookid, bname:v.l2_bookname, roll:v.l2_roll},
+      {bid:v.l3_bookid, bname:v.l3_bookname, roll:v.l3_roll},
+    ];
+    const stuRows = students.map(s=>`   ${pad(s.roll,6)} ${pad(s.name,20)} ${s.cls}`).join('\n');
+    const libRows = libs.map(l=>`   ${pad(l.bid,6)} ${pad(l.bname,15)} ${l.roll}`).join('\n');
+    const joinRows = [];
+    for(const s of students) for(const l of libs) {
+      if(String(s.roll)===String(l.roll))
+        joinRows.push(`   ${pad(s.roll,6)} ${pad(s.name,20)} ${pad(l.bid,6)} ${l.bname}`);
+    }
+    return `SQL> CREATE TABLE ${ST}(
+  2      Rollno  NUMBER(10),
+  3      Sname   VARCHAR2(20),
+  4      Class   VARCHAR2(10)
+  5  );
+
+Table created.
+
+SQL> DESC ${ST};
+
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ ROLLNO                                             NUMBER(10)
+ SNAME                                              VARCHAR2(20)
+ CLASS                                              VARCHAR2(10)
+
+SQL> INSERT INTO ${ST} VALUES(${v.s1_roll}, '${v.s1_name.toUpperCase()}', '${v.s1_class}');
+1 row created.
+SQL> INSERT INTO ${ST} VALUES(${v.s2_roll}, '${v.s2_name.toUpperCase()}', '${v.s2_class}');
+1 row created.
+SQL> INSERT INTO ${ST} VALUES(${v.s3_roll}, '${v.s3_name.toUpperCase()}', '${v.s3_class}');
+1 row created.
+
+SQL> SELECT * FROM ${ST};
+
+    ROLLNO SNAME                CLASS
+---------- -------------------- ----------
+${stuRows}
+
+SQL> CREATE TABLE ${LT}(
+  2      Bookid   NUMBER(10) PRIMARY KEY,
+  3      Bookname VARCHAR2(20),
+  4      Rollno   NUMBER(10)
+  5  );
+
+Table created.
+
+SQL> INSERT INTO ${LT} VALUES(${v.l1_bookid}, '${v.l1_bookname}', ${v.l1_roll});
+1 row created.
+SQL> INSERT INTO ${LT} VALUES(${v.l2_bookid}, '${v.l2_bookname}', ${v.l2_roll});
+1 row created.
+SQL> INSERT INTO ${LT} VALUES(${v.l3_bookid}, '${v.l3_bookname}', ${v.l3_roll});
+1 row created.
+
+SQL> SELECT * FROM ${LT};
+
+    BOOKID BOOKNAME               ROLLNO
+---------- -------------------- ----------
+${libRows}
+
+SQL> SELECT s.rollno, s.sname, l.bookid, l.bookname
+  2  FROM ${ST} s, ${LT} l
+  3  WHERE s.rollno = l.rollno;
+
+    ROLLNO SNAME                    BOOKID BOOKNAME
+---------- -------------------- ---------- --------------------
+${joinRows.length ? joinRows.join('\n') : '(no matching rows)'}
+
+${joinRows.length} rows selected.
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 6: AGGREGATE + STRING FUNCTIONS ─────────────────────────────
+{
+  id: 6, date: "13-02-2026",
+  title: "Implement Aggregate and String Functions",
+  shortTitle: "Aggregate & String Functions",
+  aim: "To use the Aggregate functions (SUM, COUNT, MAX, MIN, AVG) and String functions (LOWER, LENGTH, SUBSTR, LPAD).",
+  groups: [
+    { label: "Employee 1", cols: 2, fields: [
+      {key:"e1_no",  label:"EmpNo",  def:"101"},
+      {key:"e1_nm",  label:"Name",   def:"RAINA"},
+      {key:"e1_addr",label:"Address",def:"HARIYANA"},
+      {key:"e1_age", label:"Age",    def:"32"},
+      {key:"e1_sal", label:"Salary", def:"100000"},
+    ]},
+    { label: "Employee 2", cols: 2, fields: [
+      {key:"e2_no",  label:"EmpNo",  def:"102"},
+      {key:"e2_nm",  label:"Name",   def:"SACHINE"},
+      {key:"e2_addr",label:"Address",def:"MUMBAI"},
+      {key:"e2_age", label:"Age",    def:"45"},
+      {key:"e2_sal", label:"Salary", def:"150000"},
+    ]},
+    { label: "Employee 3", cols: 2, fields: [
+      {key:"e3_no",  label:"EmpNo",  def:"103"},
+      {key:"e3_nm",  label:"Name",   def:"KUMBLE"},
+      {key:"e3_addr",label:"Address",def:"BANGALORE"},
+      {key:"e3_age", label:"Age",    def:"46"},
+      {key:"e3_sal", label:"Salary", def:"90000"},
+    ]},
+    { label: "Employee 4", cols: 2, fields: [
+      {key:"e4_no",  label:"EmpNo",  def:"104"},
+      {key:"e4_nm",  label:"Name",   def:"DHONI"},
+      {key:"e4_addr",label:"Address",def:"UTHARAKAND"},
+      {key:"e4_age", label:"Age",    def:"40"},
+      {key:"e4_sal", label:"Salary", def:"123456"},
+    ]},
+  ],
+  gen: (v) => {
+    const recs = [
+      {no:v.e1_no, nm:v.e1_nm.toUpperCase(), addr:v.e1_addr.toUpperCase(), age:v.e1_age, sal:Number(v.e1_sal)},
+      {no:v.e2_no, nm:v.e2_nm.toUpperCase(), addr:v.e2_addr.toUpperCase(), age:v.e2_age, sal:Number(v.e2_sal)},
+      {no:v.e3_no, nm:v.e3_nm.toUpperCase(), addr:v.e3_addr.toUpperCase(), age:v.e3_age, sal:Number(v.e3_sal)},
+      {no:v.e4_no, nm:v.e4_nm.toUpperCase(), addr:v.e4_addr.toUpperCase(), age:v.e4_age, sal:Number(v.e4_sal)},
+    ];
+    const sals = recs.map(r=>r.sal);
+    const total = sals.reduce((a,b)=>a+b,0);
+    const avg = (total/recs.length).toFixed(2);
+    const allRows = recs.map(r=>`  ${pad(r.no,5)} ${pad(r.nm,15)} ${pad(r.addr,15)} ${pad(r.age,3)} ${r.sal}`).join('\n');
+    return `SQL> CREATE TABLE Employee(
+  2      EmpNo   NUMBER(10),
+  3      EmpName VARCHAR2(15),
+  4      Address VARCHAR2(15),
+  5      Age     NUMBER(3),
+  6      Salary  NUMBER(10,2)
+  7  );
+
+Table created.
+
+SQL> DESC Employee;
+
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ EMPNO                                              NUMBER(10)
+ EMPNAME                                            VARCHAR2(15)
+ ADDRESS                                            VARCHAR2(15)
+ AGE                                                NUMBER(3)
+ SALARY                                             NUMBER(10,2)
+
+SQL> INSERT INTO Employee VALUES(${v.e1_no},'${recs[0].nm}','${recs[0].addr}',${v.e1_age},${v.e1_sal});
+1 row created.
+SQL> INSERT INTO Employee VALUES(${v.e2_no},'${recs[1].nm}','${recs[1].addr}',${v.e2_age},${v.e2_sal});
+1 row created.
+SQL> INSERT INTO Employee VALUES(${v.e3_no},'${recs[2].nm}','${recs[2].addr}',${v.e3_age},${v.e3_sal});
+1 row created.
+SQL> INSERT INTO Employee VALUES(${v.e4_no},'${recs[3].nm}','${recs[3].addr}',${v.e4_age},${v.e4_sal});
+1 row created.
+
+SQL> SELECT * FROM Employee;
+
+ EMPNO EMPNAME         ADDRESS         AGE     SALARY
+ ----- --------------- --------------- --- ----------
+${allRows}
+
+${recs.length} rows selected.
+
+-- AGGREGATE FUNCTIONS --
+
+SQL> SELECT COUNT(*) FROM Employee;
+
+  COUNT(*)
+----------
+         ${recs.length}
+
+SQL> SELECT SUM(Salary) FROM Employee;
+
+SUM(SALARY)
+-----------
+    ${total}
+
+SQL> SELECT AVG(Salary) FROM Employee;
+
+AVG(SALARY)
+-----------
+    ${avg}
+
+SQL> SELECT MAX(Salary) FROM Employee;
+
+MAX(SALARY)
+-----------
+  ${Math.max(...sals)}
+
+SQL> SELECT MIN(Salary) FROM Employee;
+
+MIN(SALARY)
+-----------
+    ${Math.min(...sals)}
+
+-- STRING FUNCTIONS --
+
+SQL> SELECT LOWER(EmpName) FROM Employee;
+
+LOWER(EMPNAME)
+---------------
+${recs.map(r=>r.nm.toLowerCase()).join('\n')}
+
+SQL> SELECT LENGTH(EmpName) FROM Employee;
+
+LENGTH(EMPNAME)
+---------------
+${recs.map(r=>String(r.nm.length).padStart(15)).join('\n')}
+
+SQL> SELECT SUBSTR(EmpName, 3, 4) "Sub_Str" FROM Employee;
+
+Sub_Str
+-------
+${recs.map(r=>r.nm.substring(2,6)).join('\n')}
+
+SQL> SELECT LPAD(EmpName, 10, '*') "Ltrim" FROM Employee;
+
+Ltrim
+----------
+${recs.map(r=>r.nm.padStart(10,'*')).join('\n')}
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 7: DATE & TIME FUNCTIONS ────────────────────────────────────
+{
+  id: 7, date: "20-02-2026",
+  title: "Implement Date and Time Functions in SQL",
+  shortTitle: "Date & Time Functions",
+  aim: "To manipulate and retrieve date and time values using SQL date functions.",
+  groups: [
+    { label: "Employee 1", cols: 2, fields: [
+      {key:"e1_id",   label:"Emp ID",    def:"101"},
+      {key:"e1_name", label:"Name",      def:"Arun"},
+      {key:"e1_date", label:"Hire Date (YYYY-MM-DD)", def:"2022-01-10"},
+      {key:"e1_sal",  label:"Salary",    def:"30000"},
+    ]},
+    { label: "Employee 2", cols: 2, fields: [
+      {key:"e2_id",   label:"Emp ID",    def:"102"},
+      {key:"e2_name", label:"Name",      def:"Meena"},
+      {key:"e2_date", label:"Hire Date (YYYY-MM-DD)", def:"2021-07-15"},
+      {key:"e2_sal",  label:"Salary",    def:"45000"},
+    ]},
+    { label: "Employee 3", cols: 2, fields: [
+      {key:"e3_id",   label:"Emp ID",    def:"103"},
+      {key:"e3_name", label:"Name",      def:"Ravi"},
+      {key:"e3_date", label:"Hire Date (YYYY-MM-DD)", def:"2023-03-20"},
+      {key:"e3_sal",  label:"Salary",    def:"40000"},
+    ]},
+    { label: "Employee 4", cols: 2, fields: [
+      {key:"e4_id",   label:"Emp ID",    def:"104"},
+      {key:"e4_name", label:"Name",      def:"Kiran"},
+      {key:"e4_date", label:"Hire Date (YYYY-MM-DD)", def:"2020-11-05"},
+      {key:"e4_sal",  label:"Salary",    def:"35000"},
+    ]},
+  ],
+  gen: (v) => {
+    const recs = [
+      {id:v.e1_id, name:v.e1_name, date:v.e1_date, sal:v.e1_sal},
+      {id:v.e2_id, name:v.e2_name, date:v.e2_date, sal:v.e2_sal},
+      {id:v.e3_id, name:v.e3_name, date:v.e3_date, sal:v.e3_sal},
+      {id:v.e4_id, name:v.e4_name, date:v.e4_date, sal:v.e4_sal},
+    ];
+    const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    function fmtDate(dateStr) {
+      const d = new Date(dateStr+'T00:00:00');
+      return `${String(d.getDate()).padStart(2,'0')}-${months[d.getMonth()]}-${d.getFullYear()}`;
+    }
+    function dayName(dateStr) {
+      const d = new Date(dateStr+'T00:00:00');
+      return days[d.getDay()];
+    }
+    function daysWorked(dateStr) {
+      const d = new Date(dateStr+'T00:00:00');
+      const today = new Date();
+      return ((today - d) / 86400000).toFixed(5);
+    }
+    const inserts = recs.map(r=>`SQL> INSERT INTO employee4 VALUES(${r.id}, '${r.name}', TO_DATE('${r.date}', 'YYYY-MM-DD'), ${r.sal});\n1 row created.`).join('\n\n');
+    const extractRows = recs.map(r=>{
+      const d=new Date(r.date+'T00:00:00');
+      return `${pad(r.name,50)} ${pad(d.getFullYear(),9)} ${pad(d.getMonth()+1,9)} ${pad(d.getDate(),8)}`;
+    }).join('\n');
+    const daysRows = recs.map(r=>`${pad(r.name,50)} ${daysWorked(r.date)}`).join('\n');
+    const fmtRows  = recs.map(r=>`${pad(r.name,50)} ${pad(fmtDate(r.date),11)} ${dayName(r.date)}`).join('\n');
+    return `SQL> CREATE TABLE employee4(
+  2      emp_id    NUMBER PRIMARY KEY,
+  3      emp_name  VARCHAR2(50),
+  4      hire_date DATE,
+  5      salary    NUMBER
+  6  );
+
+Table created.
+
+${inserts}
+
+SQL> SELECT SYSDATE AS current_date FROM dual;
+
+CURRENT_D
+---------
+${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}).toUpperCase().replace(/ /g,'-')}
+
+SQL> SELECT emp_name,
+  2         EXTRACT(YEAR  FROM hire_date) AS hire_year,
+  3         EXTRACT(MONTH FROM hire_date) AS hire_month,
+  4         EXTRACT(DAY   FROM hire_date) AS hire_day
+  5  FROM employee4;
+
+EMP_NAME                                            HIRE_YEAR HIRE_MONTH   HIRE_DAY
+-------------------------------------------------- ---------- ---------- ----------
+${extractRows}
+
+SQL> SELECT emp_name, SYSDATE - hire_date AS days_worked
+  2  FROM employee4;
+
+EMP_NAME                                           DAYS_WORKED
+-------------------------------------------------- -----------
+${daysRows}
+
+SQL> SELECT emp_name,
+  2         TO_CHAR(hire_date, 'DD-MON-YYYY') AS formatted_date,
+  3         TO_CHAR(hire_date, 'Day')          AS day_name
+  4  FROM employee4;
+
+EMP_NAME                                           FORMATTED_D DAY_NAME
+-------------------------------------------------- ----------- ---------
+${fmtRows}
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 8: VIEWS ─────────────────────────────────────────────────────
+{
+  id: 8, date: "06-03-2026",
+  title: "Create and Use Views in SQL",
+  shortTitle: "Views (CREATE VIEW)",
+  aim: "To create and use views for simplifying complex queries.",
+  groups: [
+    { label: "View Settings", cols: 1, fields: [
+      {key:"view_name", label:"View Name", def:"it_employees_view"},
+    ]},
+    { label: "Record 1", cols: 2, fields: [
+      {key:"e1_id",   label:"Emp ID",  def:"101"},
+      {key:"e1_name", label:"Name",    def:"Arun"},
+      {key:"e1_sal",  label:"Salary",  def:"30000"},
+      {key:"e1_dept", label:"Dept",    def:"HR"},
+    ]},
+    { label: "Record 2", cols: 2, fields: [
+      {key:"e2_id",   label:"Emp ID",  def:"102"},
+      {key:"e2_name", label:"Name",    def:"Meena"},
+      {key:"e2_sal",  label:"Salary",  def:"45000"},
+      {key:"e2_dept", label:"Dept",    def:"IT"},
+    ]},
+    { label: "Record 3", cols: 2, fields: [
+      {key:"e3_id",   label:"Emp ID",  def:"103"},
+      {key:"e3_name", label:"Name",    def:"Kiran"},
+      {key:"e3_sal",  label:"Salary",  def:"28000"},
+      {key:"e3_dept", label:"Dept",    def:"HR"},
+    ]},
+    { label: "Record 4", cols: 2, fields: [
+      {key:"e4_id",   label:"Emp ID",  def:"104"},
+      {key:"e4_name", label:"Name",    def:"Ravi"},
+      {key:"e4_sal",  label:"Salary",  def:"50000"},
+      {key:"e4_dept", label:"Dept",    def:"IT"},
+    ]},
+    { label: "View Query Parameters", cols: 2, fields: [
+      {key:"view_dept",  label:"View WHERE dept =", def:"IT"},
+      {key:"view_sal",   label:"View WHERE salary >", def:"30000"},
+    ]},
+  ],
+  gen: (v) => {
+    const recs = [
+      {id:v.e1_id, name:v.e1_name, sal:v.e1_sal, dept:v.e1_dept},
+      {id:v.e2_id, name:v.e2_name, sal:v.e2_sal, dept:v.e2_dept},
+      {id:v.e3_id, name:v.e3_name, sal:v.e3_sal, dept:v.e3_dept},
+      {id:v.e4_id, name:v.e4_name, sal:v.e4_sal, dept:v.e4_dept},
+    ];
+    const allRows = recs.map(r=>`   ${pad(r.id,6)} ${pad(r.name,50)} ${pad(r.sal,9)} ${r.dept}`).join('\n');
+    const filtDept = recs.filter(r=>r.dept.toUpperCase()===v.view_dept.toUpperCase())
+      .map(r=>`   ${pad(r.id,6)} ${pad(r.name,50)} ${pad(r.sal,9)} ${r.dept}`).join('\n');
+    const filtSal = recs.filter(r=>Number(r.sal)>Number(v.view_sal))
+      .map(r=>`${pad(r.name,50)} ${r.sal}`).join('\n');
+    return `SQL> CREATE TABLE View_employee1(
+  2      emp_id   NUMBER PRIMARY KEY,
+  3      emp_name VARCHAR2(50) NOT NULL,
+  4      salary   NUMBER,
+  5      dept     VARCHAR2(30)
+  6  );
+
+Table created.
+
+SQL> INSERT INTO View_employee1 VALUES(${v.e1_id}, '${v.e1_name}', ${v.e1_sal}, '${v.e1_dept}');
+1 row created.
+SQL> INSERT INTO View_employee1 VALUES(${v.e2_id}, '${v.e2_name}', ${v.e2_sal}, '${v.e2_dept}');
+1 row created.
+SQL> INSERT INTO View_employee1 VALUES(${v.e3_id}, '${v.e3_name}', ${v.e3_sal}, '${v.e3_dept}');
+1 row created.
+SQL> INSERT INTO View_employee1 VALUES(${v.e4_id}, '${v.e4_name}', ${v.e4_sal}, '${v.e4_dept}');
+1 row created.
+
+SQL> CREATE VIEW ${v.view_name} AS
+  2  SELECT emp_id, emp_name, salary, dept
+  3  FROM View_employee1
+  4  WHERE dept = '${v.view_dept}';
+
+View created.
+
+SQL> SELECT * FROM ${v.view_name};
+
+    EMP_ID EMP_NAME                                               SALARY DEPT
+---------- -------------------------------------------------- ---------- -----
+${filtDept || '(no rows selected)'}
+
+SQL> SELECT * FROM View_employee1;
+
+    EMP_ID EMP_NAME                                               SALARY DEPT
+---------- -------------------------------------------------- ---------- -----
+${allRows}
+
+SQL> SELECT emp_name, salary FROM View_employee1 WHERE salary > ${v.view_sal};
+
+EMP_NAME                                               SALARY
+-------------------------------------------------- ----------
+${filtSal || '(no rows selected)'}
+
+SQL> SELECT DISTINCT dept FROM View_employee1;
+
+DEPT
+------------------------------
+${[...new Set(recs.map(r=>r.dept))].join('\n')}
+
+SQL> CREATE OR REPLACE VIEW ${v.view_name} AS
+  2  SELECT emp_id, emp_name, salary, dept
+  3  FROM View_employee1;
+
+View created.
+
+SQL> DROP VIEW ${v.view_name};
+
+View dropped.
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 9: TRIGGERS ──────────────────────────────────────────────────
+{
+  id: 9, date: "13-03-2026",
+  title: "Implement Triggers in PL/SQL",
+  shortTitle: "Triggers (PL/SQL)",
+  aim: "To create a trigger that fires when a modification is done to the employee table and displays the old and new salary difference.",
+  groups: [
+    { label: "Table & Trigger Name", cols: 1, fields: [
+      {key:"tbl",     label:"Table Name",    def:"emp101"},
+      {key:"trgname", label:"Trigger Name",  def:"display_salary_changes"},
+    ]},
+    { label: "Record 1", cols: 2, fields: [
+      {key:"r1_id",   label:"EmpID",  def:"101"},
+      {key:"r1_name", label:"Name",   def:"thiru"},
+      {key:"r1_sal",  label:"Salary", def:"23000"},
+    ]},
+    { label: "Record 2", cols: 2, fields: [
+      {key:"r2_id",   label:"EmpID",  def:"103"},
+      {key:"r2_name", label:"Name",   def:"braganya"},
+      {key:"r2_sal",  label:"Salary", def:"35000"},
+    ]},
+    { label: "Record 3", cols: 2, fields: [
+      {key:"r3_id",   label:"EmpID",  def:"104"},
+      {key:"r3_name", label:"Name",   def:"sreeya"},
+      {key:"r3_sal",  label:"Salary", def:"55000"},
+    ]},
+    { label: "UPDATE Operation (to fire trigger)", cols: 2, fields: [
+      {key:"upd_id",    label:"Update EmpID", def:"101"},
+      {key:"new_sal",   label:"New Salary",   def:"50000"},
+    ]},
+  ],
+  gen: (v) => {
+    const recs = [
+      {id:v.r1_id, name:v.r1_name, sal:v.r1_sal},
+      {id:v.r2_id, name:v.r2_name, sal:v.r2_sal},
+      {id:v.r3_id, name:v.r3_name, sal:v.r3_sal},
+    ];
+    const oldSal = (recs.find(r=>String(r.id)===String(v.upd_id)) || {sal:'N/A'}).sal;
+    const diff = Number(v.new_sal) - Number(oldSal);
+    const rows = recs.map(r=>`  ${pad(r.id,6)} ${pad(r.name,20)} ${r.sal}`).join('\n');
+    return `SQL> CREATE TABLE ${v.tbl}(
+  2      empid NUMBER(10),
+  3      ename VARCHAR2(20),
+  4      sal   NUMBER(7,2)
+  5  );
+
+Table created.
+
+SQL> DESC ${v.tbl};
+
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ EMPID                                              NUMBER(10)
+ ENAME                                              VARCHAR2(20)
+ SAL                                                NUMBER(7,2)
+
+SQL> INSERT INTO ${v.tbl} VALUES(${v.r1_id}, '${v.r1_name}', ${v.r1_sal});
+1 row created.
+SQL> INSERT INTO ${v.tbl} VALUES(${v.r2_id}, '${v.r2_name}', ${v.r2_sal});
+1 row created.
+SQL> INSERT INTO ${v.tbl} VALUES(${v.r3_id}, '${v.r3_name}', ${v.r3_sal});
+1 row created.
+
+SQL> SELECT * FROM ${v.tbl};
+
+     EMPID ENAME                       SAL
+---------- -------------------- ----------
+${rows}
+
+-- PL/SQL TRIGGER CREATION --
+
+SQL> CREATE OR REPLACE TRIGGER ${v.trgname}
+  2  BEFORE DELETE OR INSERT OR UPDATE ON ${v.tbl}
+  3  FOR EACH ROW
+  4  WHEN (NEW.EMPID > 0)
+  5  DECLARE
+  6      sal_diff NUMBER;
+  7  BEGIN
+  8      sal_diff := :NEW.sal - :OLD.sal;
+  9      DBMS_OUTPUT.PUT_LINE('Old salary: ' || :OLD.sal);
+ 10      DBMS_OUTPUT.PUT_LINE('New salary: ' || :NEW.sal);
+ 11      DBMS_OUTPUT.PUT_LINE('Salary difference: ' || sal_diff);
+ 12  END;
+ 13  /
+
+Trigger created.
+
+-- TESTING THE TRIGGER --
+
+SQL> UPDATE ${v.tbl} SET sal = ${v.new_sal} WHERE empid = ${v.upd_id};
+Old salary: ${oldSal}
+New salary: ${v.new_sal}
+Salary difference: ${diff}
+
+1 row updated.
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 10: SUBQUERIES ───────────────────────────────────────────────
+{
+  id: 10, date: "27-03-2026",
+  title: "Implement Subqueries with Aggregate Functions",
+  shortTitle: "Subqueries",
+  aim: "To display records from the Book table using subquery with aggregate functions (AVG).",
+  groups: [
+    { label: "Book 1", cols: 2, fields: [
+      {key:"b1_id",   label:"Book ID",  def:"1111"},
+      {key:"b1_title",label:"Title",    def:"AI"},
+      {key:"b1_sub",  label:"Subject",  def:"COMPSCIENCE"},
+      {key:"b1_auth", label:"Author",   def:"GARY BOLE"},
+      {key:"b1_price",label:"Price",    def:"250"},
+    ]},
+    { label: "Book 2", cols: 2, fields: [
+      {key:"b2_id",   label:"Book ID",  def:"2222"},
+      {key:"b2_title",label:"Title",    def:"C++"},
+      {key:"b2_sub",  label:"Subject",  def:"COMP SCIENCE"},
+      {key:"b2_auth", label:"Author",   def:"RAM"},
+      {key:"b2_price",label:"Price",    def:"300"},
+    ]},
+    { label: "Book 3", cols: 2, fields: [
+      {key:"b3_id",   label:"Book ID",  def:"3333"},
+      {key:"b3_title",label:"Title",    def:"DBMS"},
+      {key:"b3_sub",  label:"Subject",  def:"COMPSCIENCE"},
+      {key:"b3_auth", label:"Author",   def:"SREEYA"},
+      {key:"b3_price",label:"Price",    def:"450"},
+    ]},
+    { label: "Book 4", cols: 2, fields: [
+      {key:"b4_id",   label:"Book ID",  def:"4444"},
+      {key:"b4_title",label:"Title",    def:"Programg in C"},
+      {key:"b4_sub",  label:"Subject",  def:"COMPSCIENCE"},
+      {key:"b4_auth", label:"Author",   def:"BRAGANYA"},
+      {key:"b4_price",label:"Price",    def:"750"},
+    ]},
+    { label: "Book 5", cols: 2, fields: [
+      {key:"b5_id",   label:"Book ID",  def:"5555"},
+      {key:"b5_title",label:"Title",    def:"FINMGMT"},
+      {key:"b5_sub",  label:"Subject",  def:"BUSIS ADMIN"},
+      {key:"b5_auth", label:"Author",   def:"SASIKUMAR"},
+      {key:"b5_price",label:"Price",    def:"500"},
+    ]},
+  ],
+  gen: (v) => {
+    const books = [
+      {id:v.b1_id, title:v.b1_title, sub:v.b1_sub, auth:v.b1_auth, price:Number(v.b1_price)},
+      {id:v.b2_id, title:v.b2_title, sub:v.b2_sub, auth:v.b2_auth, price:Number(v.b2_price)},
+      {id:v.b3_id, title:v.b3_title, sub:v.b3_sub, auth:v.b3_auth, price:Number(v.b3_price)},
+      {id:v.b4_id, title:v.b4_title, sub:v.b4_sub, auth:v.b4_auth, price:Number(v.b4_price)},
+      {id:v.b5_id, title:v.b5_title, sub:v.b5_sub, auth:v.b5_auth, price:Number(v.b5_price)},
+    ];
+    const avg = books.reduce((s,b)=>s+b.price,0)/books.length;
+    const allRows   = books.map(b=>`  ${pad(b.id,5)} ${pad(b.title,15)} ${pad(b.sub,15)} ${pad(b.auth,15)} ${b.price}`).join('\n');
+    const belowAvg  = books.filter(b=>b.price<avg).map(b=>`  ${pad(b.id,5)} ${pad(b.title,15)} ${pad(b.sub,15)} ${pad(b.auth,15)} ${b.price}`).join('\n');
+    const aboveAvg  = books.filter(b=>b.price>avg).map(b=>`  ${pad(b.id,5)} ${pad(b.title,15)} ${pad(b.sub,15)} ${pad(b.auth,15)} ${b.price}`).join('\n');
+    const geAllAvg  = books.filter(b=>b.price>=avg).map(b=>`  ${pad(b.id,5)} ${pad(b.title,15)} ${pad(b.sub,15)} ${pad(b.auth,15)} ${b.price}`).join('\n');
+    const leSomeAvg = books.filter(b=>b.price<=avg).map(b=>`  ${pad(b.id,5)} ${pad(b.title,15)} ${pad(b.sub,15)} ${pad(b.auth,15)} ${b.price}`).join('\n');
+    return `SQL> CREATE TABLE book(
+  2      Bid    INT PRIMARY KEY,
+  3      Title  VARCHAR(15),
+  4      Sub    VARCHAR(15),
+  5      Author VARCHAR(15),
+  6      Price  DECIMAL(5,2)
+  7  );
+
+Table created.
+
+SQL> DESC book;
+
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ BID                                       NOT NULL NUMBER(10)
+ TITLE                                              VARCHAR2(15)
+ SUB                                                VARCHAR2(15)
+ AUTHOR                                             VARCHAR2(15)
+ PRICE                                              NUMBER(5,2)
+
+SQL> INSERT INTO book VALUES(${v.b1_id}, '${v.b1_title}', '${v.b1_sub}', '${v.b1_auth}', ${v.b1_price});
+1 row created.
+SQL> INSERT INTO book VALUES(${v.b2_id}, '${v.b2_title}', '${v.b2_sub}', '${v.b2_auth}', ${v.b2_price});
+1 row created.
+SQL> INSERT INTO book VALUES(${v.b3_id}, '${v.b3_title}', '${v.b3_sub}', '${v.b3_auth}', ${v.b3_price});
+1 row created.
+SQL> INSERT INTO book VALUES(${v.b4_id}, '${v.b4_title}', '${v.b4_sub}', '${v.b4_auth}', ${v.b4_price});
+1 row created.
+SQL> INSERT INTO book VALUES(${v.b5_id}, '${v.b5_title}', '${v.b5_sub}', '${v.b5_auth}', ${v.b5_price});
+1 row created.
+
+SQL> SELECT * FROM book;
+
+     BID TITLE           SUB             AUTHOR               PRICE
+-------- --------------- --------------- --------------- ----------
+${allRows}
+
+-- AVG PRICE = ${avg.toFixed(2)} --
+
+SQL> SELECT * FROM book WHERE Price < (SELECT AVG(Price) FROM book);
+
+     BID TITLE           SUB             AUTHOR               PRICE
+-------- --------------- --------------- --------------- ----------
+${belowAvg || '(no rows)'}
+
+SQL> SELECT * FROM book WHERE Price > (SELECT AVG(Price) FROM book);
+
+     BID TITLE           SUB             AUTHOR               PRICE
+-------- --------------- --------------- --------------- ----------
+${aboveAvg || '(no rows)'}
+
+SQL> SELECT * FROM book WHERE Price >= ALL (SELECT AVG(Price) FROM book);
+
+     BID TITLE           SUB             AUTHOR               PRICE
+-------- --------------- --------------- --------------- ----------
+${geAllAvg || '(no rows)'}
+
+SQL> SELECT * FROM book WHERE Price <= SOME (SELECT AVG(Price) FROM book);
+
+     BID TITLE           SUB             AUTHOR               PRICE
+-------- --------------- --------------- --------------- ----------
+${leSomeAvg || '(no rows)'}
+
+SQL> SELECT * FROM book WHERE Price <= ANY (SELECT AVG(Price) FROM book);
+
+     BID TITLE           SUB             AUTHOR               PRICE
+-------- --------------- --------------- --------------- ----------
+${leSomeAvg || '(no rows)'}
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 11: STORED PROCEDURES ────────────────────────────────────────
+{
+  id: 11, date: "10-03-2026",
+  title: "PL/SQL Program Using Stored Procedure",
+  shortTitle: "Stored Procedure (PL/SQL)",
+  aim: "To create and execute stored procedures using PL/SQL to update employee salary by a percentage.",
+  groups: [
+    { label: "Table Name", cols: 1, fields: [
+      {key:"proc_name", label:"Procedure Name", def:"increase_salary"},
+    ]},
+    { label: "Record 1", cols: 2, fields: [
+      {key:"e1_id",   label:"Emp ID",  def:"101"},
+      {key:"e1_name", label:"Name",    def:"Arun"},
+      {key:"e1_sal",  label:"Salary",  def:"30000"},
+      {key:"e1_dept", label:"Dept",    def:"HR"},
+    ]},
+    { label: "Record 2", cols: 2, fields: [
+      {key:"e2_id",   label:"Emp ID",  def:"102"},
+      {key:"e2_name", label:"Name",    def:"Meena"},
+      {key:"e2_sal",  label:"Salary",  def:"45000"},
+      {key:"e2_dept", label:"Dept",    def:"IT"},
+    ]},
+    { label: "Record 3", cols: 2, fields: [
+      {key:"e3_id",   label:"Emp ID",  def:"103"},
+      {key:"e3_name", label:"Name",    def:"Ravi"},
+      {key:"e3_sal",  label:"Salary",  def:"40000"},
+      {key:"e3_dept", label:"Dept",    def:"IT"},
+    ]},
+    { label: "Record 4", cols: 2, fields: [
+      {key:"e4_id",   label:"Emp ID",  def:"104"},
+      {key:"e4_name", label:"Name",    def:"Kiran"},
+      {key:"e4_sal",  label:"Salary",  def:"35000"},
+      {key:"e4_dept", label:"Dept",    def:"Finance"},
+    ]},
+    { label: "Procedure Execution", cols: 2, fields: [
+      {key:"call_id",      label:"Employee ID to Update",  def:"102"},
+      {key:"call_percent", label:"Salary Increase (%)",   def:"10"},
+    ]},
+  ],
+  gen: (v) => {
+    const recs = [
+      {id:v.e1_id, name:v.e1_name, sal:Number(v.e1_sal), dept:v.e1_dept},
+      {id:v.e2_id, name:v.e2_name, sal:Number(v.e2_sal), dept:v.e2_dept},
+      {id:v.e3_id, name:v.e3_name, sal:Number(v.e3_sal), dept:v.e3_dept},
+      {id:v.e4_id, name:v.e4_name, sal:Number(v.e4_sal), dept:v.e4_dept},
+    ];
+    const allRows = recs.map(r=>`  ${pad(r.id,6)} ${pad(r.name,50)} ${pad(r.sal,9)} ${r.dept}`).join('\n');
+    const target = recs.find(r=>String(r.id)===String(v.call_id));
+    const newSal = target ? Math.round(target.sal + (target.sal * Number(v.call_percent) / 100)) : 'N/A';
+    const afterRows = recs.map(r=>{
+      const sal = String(r.id)===String(v.call_id) ? newSal : r.sal;
+      return `  ${pad(r.id,6)} ${pad(r.name,50)} ${pad(sal,9)} ${r.dept}`;
+    }).join('\n');
+    return `SQL> CREATE TABLE employee5(
+  2      emp_id   NUMBER PRIMARY KEY,
+  3      emp_name VARCHAR2(50),
+  4      salary   NUMBER,
+  5      dept     VARCHAR2(30)
+  6  );
+
+Table created.
+
+SQL> INSERT INTO employee5 VALUES(${v.e1_id}, '${v.e1_name}', ${v.e1_sal}, '${v.e1_dept}');
+1 row created.
+SQL> INSERT INTO employee5 VALUES(${v.e2_id}, '${v.e2_name}', ${v.e2_sal}, '${v.e2_dept}');
+1 row created.
+SQL> INSERT INTO employee5 VALUES(${v.e3_id}, '${v.e3_name}', ${v.e3_sal}, '${v.e3_dept}');
+1 row created.
+SQL> INSERT INTO employee5 VALUES(${v.e4_id}, '${v.e4_name}', ${v.e4_sal}, '${v.e4_dept}');
+1 row created.
+
+SQL> SELECT * FROM employee5;
+
+    EMP_ID EMP_NAME                                               SALARY DEPT
+---------- -------------------------------------------------- ---------- -------
+${allRows}
+
+SQL> CREATE OR REPLACE PROCEDURE ${v.proc_name}(
+  2      p_emp_id  IN NUMBER,
+  3      p_percent IN NUMBER
+  4  )
+  5  IS
+  6  BEGIN
+  7      UPDATE employee5
+  8      SET salary = salary + (salary * p_percent / 100)
+  9      WHERE emp_id = p_emp_id;
+ 10
+ 11      DBMS_OUTPUT.PUT_LINE('Salary updated for Employee ID: ' || p_emp_id);
+ 12  END;
+ 13  /
+
+Procedure created.
+
+SQL> BEGIN
+  2      ${v.proc_name}(${v.call_id}, ${v.call_percent});
+  3  END;
+  4  /
+Salary updated for Employee ID: ${v.call_id}
+
+PL/SQL procedure successfully completed.
+
+SQL> SELECT * FROM employee5;
+
+    EMP_ID EMP_NAME                                               SALARY DEPT
+---------- -------------------------------------------------- ---------- -------
+${afterRows}
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+// ─── EX 12: CURSORS ──────────────────────────────────────────────────
+{
+  id: 12, date: "17-03-2026",
+  title: "PL/SQL Program Using Cursor",
+  shortTitle: "Cursors (PL/SQL)",
+  aim: "To create cursors to fetch records from the employee table and exit when no records are found.",
+  groups: [
+    { label: "Table & Cursor Name", cols: 1, fields: [
+      {key:"tbl",  label:"Table Name",  def:"emp101"},
+      {key:"cur",  label:"Cursor Name", def:"cur_employee"},
+    ]},
+    { label: "Record 1", cols: 2, fields: [
+      {key:"r1_id",   label:"EmpID",  def:"101"},
+      {key:"r1_name", label:"Name",   def:"thiru"},
+      {key:"r1_sal",  label:"Salary", def:"23000"},
+    ]},
+    { label: "Record 2", cols: 2, fields: [
+      {key:"r2_id",   label:"EmpID",  def:"103"},
+      {key:"r2_name", label:"Name",   def:"braganya"},
+      {key:"r2_sal",  label:"Salary", def:"35000"},
+    ]},
+    { label: "Record 3", cols: 2, fields: [
+      {key:"r3_id",   label:"EmpID",  def:"104"},
+      {key:"r3_name", label:"Name",   def:"sreeya"},
+      {key:"r3_sal",  label:"Salary", def:"55000"},
+    ]},
+    { label: "Record 4", cols: 2, fields: [
+      {key:"r4_id",   label:"EmpID",  def:"105"},
+      {key:"r4_name", label:"Name",   def:"gai"},
+      {key:"r4_sal",  label:"Salary", def:"45000"},
+    ]},
+  ],
+  gen: (v) => {
+    const recs = [
+      {id:v.r1_id, name:v.r1_name, sal:v.r1_sal},
+      {id:v.r2_id, name:v.r2_name, sal:v.r2_sal},
+      {id:v.r3_id, name:v.r3_name, sal:v.r3_sal},
+      {id:v.r4_id, name:v.r4_name, sal:v.r4_sal},
+    ];
+    const rows = recs.map(r=>`  ${pad(r.id,6)} ${pad(r.name,20)} ${r.sal}`).join('\n');
+    const curOut = recs.map(r=>`${r.id} ${r.name} ${r.sal}`).join('\n');
+    return `SQL> CREATE TABLE ${v.tbl}(
+  2      EMPID NUMBER(10),
+  3      ENAME VARCHAR2(20),
+  4      SAL   NUMBER(10)
+  5  );
+
+Table created.
+
+SQL> INSERT INTO ${v.tbl} VALUES(${v.r1_id}, '${v.r1_name}', ${v.r1_sal});
+1 row created.
+SQL> INSERT INTO ${v.tbl} VALUES(${v.r2_id}, '${v.r2_name}', ${v.r2_sal});
+1 row created.
+SQL> INSERT INTO ${v.tbl} VALUES(${v.r3_id}, '${v.r3_name}', ${v.r3_sal});
+1 row created.
+SQL> INSERT INTO ${v.tbl} VALUES(${v.r4_id}, '${v.r4_name}', ${v.r4_sal});
+1 row created.
+
+SQL> SELECT * FROM ${v.tbl};
+
+     EMPID ENAME                       SAL
+---------- -------------------- ----------
+${rows}
+
+-- PL/SQL CURSOR --
+
+SQL> ed script3
+
+DECLARE
+    emp_id ${v.tbl}.empid%TYPE;
+    e_name ${v.tbl}.ename%TYPE;
+    e_sal  ${v.tbl}.sal%TYPE;
+
+    CURSOR ${v.cur} IS
+        SELECT empid, ename, sal FROM ${v.tbl};
+BEGIN
+    OPEN ${v.cur};
+    LOOP
+        FETCH ${v.cur} INTO emp_id, e_name, e_sal;
+        EXIT WHEN ${v.cur}%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(emp_id || ' ' || e_name || ' ' || e_sal);
+    END LOOP;
+    CLOSE ${v.cur};
+END;
+/
+
+SQL> @script3
+${curOut}
+
+PL/SQL procedure successfully completed.
+
+-- RESULT: Thus, the program has been executed successfully.`;
+  }
+},
+
+]; // END experiments array
+
+// ===================================================================
+// HELPERS
+// ===================================================================
+function pad(str, len) {
+  return String(str).padEnd(len);
+}
+
+// ===================================================================
+// RENDER SIDEBAR
+// ===================================================================
+const listEl = document.getElementById('exp-list');
+experiments.forEach(exp => {
+  const el = document.createElement('div');
+  el.className = 'exp-item';
+  el.dataset.id = exp.id;
+  el.innerHTML = `<span class="exp-num">${String(exp.id).padStart(2,'0')}</span>
+    <span class="exp-label">${exp.shortTitle}</span>`;
+  el.onclick = () => loadExperiment(exp.id);
+  listEl.appendChild(el);
+});
+
+// ===================================================================
+// LOAD EXPERIMENT
+// ===================================================================
+let currentExp = null;
+
+function loadExperiment(id) {
+  const exp = experiments.find(e => e.id === id);
+  if (!exp) return;
+  currentExp = exp;
+
+  // Update sidebar active state
+  document.querySelectorAll('.exp-item').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.id) === id);
+  });
+
+  // Show experiment view, hide welcome
+  document.getElementById('welcome').style.display = 'none';
+  const view = document.getElementById('exp-view');
+  view.style.display = 'flex';
+
+  // Update header
+  document.getElementById('hdr-num').textContent = `Ex. No: ${exp.id}`;
+  document.getElementById('hdr-date').textContent = exp.date;
+  document.getElementById('hdr-title').textContent = exp.title;
+  document.getElementById('aim-text').textContent = exp.aim;
+
+  // Reset output
+  document.getElementById('empty-state').style.display = 'flex';
+  document.getElementById('output-code').style.display = 'none';
+  document.getElementById('output-code').textContent = '';
+  const copyBtn = document.getElementById('copy-btn');
+  copyBtn.disabled = true;
+  copyBtn.classList.remove('copied');
+  copyBtn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy SQL`;
+
+  // Build form
+  const container = document.getElementById('fields-container');
+  container.innerHTML = '';
+  exp.groups.forEach(group => {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'field-group';
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'group-label';
+    labelEl.textContent = group.label;
+    groupEl.appendChild(labelEl);
+
+    const gridEl = document.createElement('div');
+    gridEl.className = 'fields-grid' + (group.cols === 1 ? ' single' : '');
+    groupEl.appendChild(gridEl);
+
+    group.fields.forEach(field => {
+      const wrap = document.createElement('div');
+      wrap.className = 'field-wrap';
+      wrap.innerHTML = `<label>${field.label}</label>
+        <input type="text" id="f_${field.key}" value="${field.def || ''}" placeholder="${field.ph || field.def || ''}" />`;
+      gridEl.appendChild(wrap);
+    });
+
+    container.appendChild(groupEl);
+  });
+}
+
+// ===================================================================
+// PROCESS (GENERATE CODE)
+// ===================================================================
+function processCode() {
+  if (!currentExp) return;
+
+  // Collect all field values
+  const values = {};
+  currentExp.groups.forEach(group => {
+    group.fields.forEach(field => {
+      const el = document.getElementById(`f_${field.key}`);
+      values[field.key] = el ? el.value.trim() : field.def;
+    });
+  });
+
+  // Generate SQL
+  let code;
+  try {
+    code = currentExp.gen(values);
+  } catch(e) {
+    code = `-- Error generating code: ${e.message}\n-- Please check your input values.`;
+  }
+
+  // Show output
+  const emptyEl = document.getElementById('empty-state');
+  const codeEl  = document.getElementById('output-code');
+  emptyEl.style.display = 'none';
+  codeEl.style.display = 'block';
+  codeEl.textContent = code;
+
+  // Enable copy button
+  const copyBtn = document.getElementById('copy-btn');
+  copyBtn.disabled = false;
+  copyBtn.classList.remove('copied');
+
+  // Scroll output to top
+  document.getElementById('output-scroll').scrollTop = 0;
+}
+
+// ===================================================================
+// COPY CODE
+// ===================================================================
+function copyCode() {
+  const codeEl = document.getElementById('output-code');
+  if (!codeEl.textContent) return;
+  navigator.clipboard.writeText(codeEl.textContent).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.classList.add('copied');
+    btn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy SQL`;
+    }, 2000);
+  });
+}
+
+// Allow Enter key to trigger process
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.ctrlKey) processCode();
+});
+</script>
+</body>
+</html>
